@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PandaEats">
   <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22PandaEats%20Delivery%22,%22short_name%22:%22PandaEats%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22theme_color%22:%22%23FF2D55%22,%22background_color%22:%22%23FFFFFF%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ccircle%20cx='50'%20cy='50'%20r='50'%20fill='%23FF2D55'/%3E%3Ctext%20x='50'%20y='67'%20font-size='45'%20text-anchor='middle'%20fill='white'%3E🐼%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}">
-  <title>PandaEats - Cash / JazzCash / EasyPaisa Only</title>
+  <title>PandaEats - User Generated Restaurants Only</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -143,35 +143,20 @@
   <div class="container mt-3" id="mainContent"></div>
 </div>
 <footer>
-  <i class="fas fa-heart text-danger"></i> PandaEats — Cash / JazzCash / EasyPaisa Only | Upload Screenshot for Digital Payments
+  <i class="fas fa-heart text-danger"></i> PandaEats — Only user-created restaurants and items | Cash / JazzCash / EasyPaisa
 </footer>
 
 <script>
-  // ---------- DATA MODELS ----------
-  let restaurants = [];
+  // ---------- DATA MODELS (No default restaurants or items) ----------
+  let restaurants = [];     // only user-created restaurants
   let users = [];
   let orders = [];
   let currentUser = null;
 
-  const defaultRestaurants = [
-    { id: 1, name: "Burger & Co", cuisine: "Burgers, Fast Food", rating: 4.8, imageIcon: "🍔", jazzcashNumber: "03001234567", easypaisaNumber: "03111234567", menu: [
-      { id: 101, name: "Classic Cheeseburger", price: 899, desc: "Beef patty, cheddar", img: "🍔", imgDataURL: null },
-      { id: 102, name: "Crispy Chicken Burger", price: 949, desc: "Crispy chicken", img: "🍗", imgDataURL: null },
-      { id: 103, name: "French Fries", price: 349, desc: "Golden fries", img: "🍟", imgDataURL: null }
-    ]},
-    { id: 2, name: "Pizza Paradise", cuisine: "Italian, Pizza", rating: 4.9, imageIcon: "🍕", jazzcashNumber: "03009876543", easypaisaNumber: "03119876543", menu: [
-      { id: 201, name: "Margherita Pizza", price: 1299, desc: "Fresh mozzarella", img: "🍕", imgDataURL: null },
-      { id: 202, name: "Pepperoni Feast", price: 1499, desc: "Double pepperoni", img: "🍕", imgDataURL: null }
-    ]},
-    { id: 3, name: "Sushi Master", cuisine: "Japanese", rating: 4.7, imageIcon: "🍣", jazzcashNumber: "03005556677", easypaisaNumber: "03115556677", menu: [
-      { id: 301, name: "California Roll", price: 1199, desc: "Crab, avocado", img: "🍣", imgDataURL: null }
-    ]}
-  ];
-
   function loadData() {
     const storedRest = localStorage.getItem('panda_restaurants');
     if (storedRest) restaurants = JSON.parse(storedRest);
-    else restaurants = JSON.parse(JSON.stringify(defaultRestaurants));
+    else restaurants = [];  // start empty, no demo
 
     const storedUsers = localStorage.getItem('panda_users');
     if (storedUsers) users = JSON.parse(storedUsers);
@@ -262,7 +247,7 @@
     return `₨ ${amount.toLocaleString()}`;
   }
 
-  // ---------- PAYMENT MODAL (No Credit Card) ----------
+  // ---------- PAYMENT MODAL (Cash / JazzCash / EasyPaisa only) ----------
   function showPaymentModal(cartItems, restaurantId, restaurantName, total, onConfirm) {
     const restaurant = restaurants.find(r => r.id === restaurantId);
     if (!restaurant) { alert("Restaurant not found"); return; }
@@ -395,7 +380,7 @@
     modalDiv.addEventListener('hidden.bs.modal', () => modalDiv.remove());
   }
 
-  // ---------- ADD ITEM MODAL (unchanged) ----------
+  // ---------- ADD ITEM MODAL (Popup Card) ----------
   function showAddItemModal(restaurantId, onSuccess) {
     const modalDiv = document.createElement('div');
     modalDiv.className = 'modal fade add-item-modal';
@@ -493,10 +478,13 @@
     const customerOrders = orders.filter(o => o.customerId === currentUser.id);
     const cartData = JSON.parse(localStorage.getItem(`cart_${currentUser.id}`) || '[]');
     const { subtotal, delivery, total } = getCartTotal();
+    
     let html = `
       <div class="row"><div class="col-lg-8">
         <h5 class="section-title">🍽️ All Restaurants</h5><div class="row g-3" id="restaurantsGrid">
-          ${restaurants.map(rest => `<div class="col-md-6"><div class="card h-100 shadow-sm"><div class="card-body"><div class="d-flex justify-content-between"><span class="fs-1">${rest.imageIcon}</span><span class="badge bg-warning">⭐ ${rest.rating}</span></div><h5 class="mt-2">${rest.name}</h5><p class="text-muted small">${rest.cuisine}</p><button class="btn btn-sm btn-outline-danger view-menu-btn" data-id="${rest.id}" data-name="${rest.name}">View Menu</button></div></div></div>`).join('')}
+          ${restaurants.length === 0 ? '<div class="col-12"><div class="alert alert-info">No restaurants yet. Restaurant owners can register and add their restaurants.</div></div>' : 
+            restaurants.map(rest => `<div class="col-md-6"><div class="card h-100 shadow-sm"><div class="card-body"><div class="d-flex justify-content-between"><span class="fs-1">${rest.imageIcon}</span><span class="badge bg-warning">⭐ ${rest.rating}</span></div><h5 class="mt-2">${rest.name}</h5><p class="text-muted small">${rest.cuisine}</p><button class="btn btn-sm btn-outline-danger view-menu-btn" data-id="${rest.id}" data-name="${rest.name}">View Menu</button></div></div></div>`).join('')
+          }
         </div><hr><h5 class="section-title">📦 My Orders</h5><div id="customerOrdersList">
           ${customerOrders.length === 0 ? '<p class="text-muted">No orders yet.</p>' : customerOrders.map(order => `
             <div class="card mb-2"><div class="card-body"><div class="d-flex justify-content-between"><strong>#${order.id}</strong><span class="order-status status-${order.status}">${order.status.replace('_',' ').toUpperCase()}</span></div>
@@ -507,7 +495,7 @@
       </div><div class="col-lg-4"><div class="card sticky-top" style="top:80px;"><div class="card-body"><h5><i class="fas fa-shopping-cart text-primary"></i> Your Cart (PKR)</h5>
       ${cartData.length === 0 ? '<p class="text-muted">Cart empty</p>' : `<div style="max-height:320px; overflow-y:auto;">${cartData.map((item, idx) => `<div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2"><div>${item.imgDataURL ? `<img src="${item.imgDataURL}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">` : `<span>${item.img || '🍽️'}</span>`} <span>${item.name}</span><br><small>${formatPKR(item.price)}</small></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-secondary decr" data-idx="${idx}">-</button><span>${item.quantity}</span><button class="btn btn-sm btn-outline-secondary incr" data-idx="${idx}">+</button><button class="btn btn-sm text-danger remove" data-idx="${idx}"><i class="fas fa-trash"></i></button></div></div>`).join('')}</div><hr><div class="d-flex justify-content-between"><span>Subtotal</span><span>${formatPKR(subtotal)}</span></div><div class="d-flex justify-content-between"><span>Delivery</span><span>${formatPKR(delivery)}</span></div><div class="d-flex justify-content-between fw-bold"><span>Total</span><span>${formatPKR(total)}</span></div><button class="btn btn-primary-panda w-100 mt-3" id="checkoutBtn">Checkout</button>`}</div></div></div></div>`;
     container.innerHTML = html;
-    document.querySelectorAll('.view-menu-btn').forEach(btn => { btn.addEventListener('click', () => { const rest = restaurants.find(r => r.id == btn.dataset.id); showMenuModal(rest, addToCart); }); });
+    document.querySelectorAll('.view-menu-btn').forEach(btn => { btn.addEventListener('click', () => { const rest = restaurants.find(r => r.id == btn.dataset.id); if(rest) showMenuModal(rest, addToCart); }); });
     document.querySelectorAll('.decr').forEach(btn => btn.addEventListener('click', () => updateQty(parseInt(btn.dataset.idx), -1)));
     document.querySelectorAll('.incr').forEach(btn => btn.addEventListener('click', () => updateQty(parseInt(btn.dataset.idx), 1)));
     document.querySelectorAll('.remove').forEach(btn => btn.addEventListener('click', () => removeCartItem(parseInt(btn.dataset.idx))));
@@ -526,7 +514,7 @@
   function renderRestaurantDashboard() {
     const container = document.getElementById('mainContent');
     const myRestaurant = restaurants.find(r => r.id === currentUser.restaurantId);
-    if (!myRestaurant) { container.innerHTML = '<div class="alert alert-danger">Restaurant not found.</div>'; return; }
+    if (!myRestaurant) { container.innerHTML = '<div class="alert alert-danger">Your restaurant not found. Please contact support.</div>'; return; }
     const myOrders = getOrdersForRestaurant(myRestaurant.id);
     const menu = myRestaurant.menu;
     const handleAddItem = () => showAddItemModal(myRestaurant.id, () => renderRestaurantDashboard());
@@ -577,7 +565,7 @@
     else if (currentUser.role === 'rider') renderRiderDashboard();
   }
 
-  // ---------- AUTH with Unique Username & Restaurant Payment Numbers ----------
+  // ---------- AUTH with Unique Username & Restaurant Creation ----------
   function showLoginScreen() {
     const overlay = document.createElement('div'); overlay.className = 'login-overlay';
     overlay.innerHTML = `<div class="card shadow-lg" style="max-width:400px;"><div class="card-body p-4"><h4 class="text-center">PandaEats</h4><input type="text" id="loginUsername" class="form-control mb-2" placeholder="Username"><input type="password" id="loginPassword" class="form-control mb-2" placeholder="Password"><button class="btn btn-primary-panda w-100" id="doLoginBtn">Login</button><hr><button class="btn btn-outline-secondary w-100" id="showRegisterBtn">Create Account</button></div></div>`;
@@ -616,8 +604,18 @@
         const easypaisa = overlay.querySelector('#easypaisaNumber').value.trim();
         if (!restName || !cuisine) { alert("Restaurant name and cuisine required"); return; }
         if (!jazzcash && !easypaisa) { alert("At least one payment number (JazzCash or EasyPaisa) required"); return; }
-        const newId = restaurants.length ? Math.max(...restaurants.map(r => r.id)) + 1 : 4;
-        restaurants.push({ id: newId, name: restName, cuisine, rating: 5.0, imageIcon: "🍽️", jazzcashNumber: jazzcash, easypaisaNumber: easypaisa, menu: [] });
+        const newId = restaurants.length ? Math.max(...restaurants.map(r => r.id)) + 1 : 1;
+        const newRestaurant = {
+          id: newId,
+          name: restName,
+          cuisine: cuisine,
+          rating: 5.0,
+          imageIcon: "🍽️",
+          jazzcashNumber: jazzcash,
+          easypaisaNumber: easypaisa,
+          menu: []
+        };
+        restaurants.push(newRestaurant);
         saveRestaurants();
         restaurantId = newId;
       }
@@ -643,7 +641,7 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      const swCode = `self.addEventListener('install', e => e.waitUntil(caches.open('panda-v9').then(c => c.addAll(['/','index.html'])))); self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`;
+      const swCode = `self.addEventListener('install', e => e.waitUntil(caches.open('panda-v11').then(c => c.addAll(['/','index.html'])))); self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`;
       navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], {type: 'application/javascript'}))).catch(console.log);
     });
   }
